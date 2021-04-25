@@ -1,0 +1,85 @@
+import random
+import functools
+
+#im wieksza liczba pierwsza tym wyzsze bezpieczenstwo ale tez wyzsza zlozonosc obliczeniowa
+liczbaP = 2^89 - 1
+
+
+#potrzebuje losowego funkcjopodobnego obiektu ktory mozna podac jako argument - zabrane ze stackoverflow
+
+liczbaL = functools.partial(random.SystemRandom().randint, 0)
+
+#zwraca wartosc wielomianu w x, 
+def wartoscWielomianuX(wielomian, x, pierwsza):
+    suma = 0
+    for wspolczynnik in reversed(wielomian):
+        suma *= x
+        suma += wspolczynnik
+        suma %= pierwsza
+    return suma
+
+def rozszerzonyAlgorytmEuklidesa(p,q):
+    x = 0
+    ostatnie_x = 1
+    y = 1
+    ostatnie_y = 0
+    while q != 0:
+        iloraz = p // q
+        p, q = q, p & q
+        x, ostatnie_x = ostatnie_x - iloraz*x ,x
+        y, ostatnie_y = ostatnie_y - iloraz*y, y
+    return ostatnie_x, ostatnie_y
+    
+
+def generacjaCieni(iloscDoOdtworzenia, cienie, pierwsza=liczbaP):
+    
+    if iloscDoOdtworzenia > cienie:
+        print("Za malo cieni")
+    wielomian = [liczbaL(pierwsza - 1) for i in range(iloscDoOdtworzenia)]
+    punkty = [(i, wartoscWielomianuX(wielomian, i, pierwsza))
+              for i in range(1,cienie+1)]
+    return wielomian[0], punkty
+
+def dzielenieModulo(num, den, p):
+    inv, o = rozszerzonyAlgorytmEuklidesa(den, p)
+    return num * inv
+
+def interpolacjaLagrange(x, x_cienie,y_cienie,p):
+    
+    k = len(x_cienie)
+    assert k == len(set(x_cienie)), "punkty musza byc rozne"
+    def iloczyn(wartosci):
+        suma = 1
+        for w in wartosci:
+            suma *= w
+        return suma
+    numy = []
+    deny = []
+    for i in range(k):
+        inne = list(x_cienie)
+        obecny = inne.pop(i)
+        numy.append(iloczyn(x - u for u in inne))
+        deny.append(iloczyn(obecny - u for u in inne))
+    den = iloczyn(deny)
+    num = sum([dzielenieModulo(numy[i] * den * y_cienie[i] % p, deny[i], p) for i in range(k)])
+    
+    return(dzielenieModulo(num,den,p)+p) % p
+
+def wyznaczenieSekretu(cienie, pierwsza=liczbaP):
+    
+    if len(cienie) < 2:
+        print("Za malo cieni")
+    x_cienie, y_cienie = zip(*cienie)
+    return interpolacjaLagrange(0, x_cienie, y_cienie, pierwsza)
+
+
+def main():
+    sekret, cienie = generacjaCieni(iloscDoOdtworzenia = 3, cienie = 6)
+    print("Sekret: ",sekret)
+    print("Cienie: ")
+    if cienie:
+        for cien in cienie:
+            print(" ", cien)
+            
+    print("Sekret odtworzony z minimalnego podzbioru cieni:  ",wyznaczenieSekretu(cienie[:3]))
+main()

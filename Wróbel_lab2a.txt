@@ -1,0 +1,76 @@
+#WCY19KY1S1 Ksawery Wróbel Lab2a
+from hashlib import sha3_512
+import hmac
+import binascii
+import string
+import random
+#zalozenie jest takie, ze wspolny klucz jest znany tylko A i B
+#przebieg protokołu:
+#A wybiera liczbe losową randA i wysyła ją do B
+#B wybiera liczbę losową randB i wysyła ją do A, razem z HMAC(klucz,(randa+randb+b))
+#A oblicza HMAC(klucz,(randa+randb+b) i porównuje. Jeśli są równe to ma pewność, że jest to B
+#A wysyła do B HMAC(klucz,(randb+a)). B oblicza HMAC(klucz,(randb+a)). Jeśli są równe, to jest to A
+idA = 'A'
+idB = 'B'
+#generacja skrotu z klucza
+skrotzKlucza = hashlib.sha3_512()
+wspolnyKlucz = "WCY19KY1S1WROBEL"
+skrotzKlucza.update(wspolnyKlucz.encode('utf-8'))
+wspolnyKluczHash = skrotzKlucza.hexdigest()
+
+
+#print("",wspolnyKluczHash)
+
+#1. A wysyła losową liczbe do B
+randA = randint(2,2^15)
+
+print("Strona A: wysłano stronie B liczbę randA: ",randA)
+print("Strona B: otrzymano od strony A liczbę: ",randA)
+
+
+#teraz B ma randB, randA, B, klucz - mozna obliczyc wartosc fukncji HMAC
+#B generuje losową liczbe B i wysyła ją do B razem z wartoscią funkcji HMAC
+def hmacB(randA, idB):
+    randB = randint(2,2^15)
+    argumentB = str(randA) + str(randB) + idB
+    print("Argument B: ",argumentB)
+    hhmacB = hmac.new(binascii.unhexlify(wspolnyKluczHash),argumentB.encode(),hashlib.sha3_512)
+    hhmacBout = hhmacB.hexdigest()
+    print("Strona B: wyslano do strony A liczbe randB: ",randB, " oraz  wartosc funkcji HMAC dla wspolnego klucza ",wspolnyKlucz," oraz argumentow randA, randB, idB: ",hhmacBout)
+    return randB, hhmacBout
+randB, hhmacBout = hmacB(randA, idB)
+
+
+
+#A otrzymał randB oraz wartosc funkcji HMAC dla arg randA, randB, idB, musi to obliczyc i porownac
+def hmacA(randA, randB, idB, hhmacBout):
+    print("Strona A: otrzymano od strony B liczbę: ", randB,"oraz wartość funkcji HMAC dla wspolnego klucza",
+      wspolnyKlucz, " oraz argumentow randA, randB, idB: ",hhmacBout)
+    print("Strona A: obliczenie wartosci funkcji HMAC dla otrzymanych argumentów: RandA, RandB, idB i  i porównanie wyniku z wartością funkcji HMAC otrzymanej od B")
+    argumentA = str(randA) + str(randB) + idB 
+    #print("Argument A: ",argumentA)
+    
+    hhmacA = hmac.new(binascii.unhexlify(wspolnyKluczHash),argumentA.encode(),hashlib.sha3_512)
+    hhmacAout = hhmacA.hexdigest()
+    print("Czy wartosci się zgadzają:  ",(hhmacAout==hhmacBout))
+    
+    argumentA2 = str(randB) + idA
+    hhmacA2 = hmac.new(binascii.unhexlify(wspolnyKluczHash),argumentA2.encode(),hashlib.sha3_512)
+    hhmacA2out = hhmacA2.hexdigest()
+    print("Strona A: obliczenie wartosci funkcji HMAC dla argumentów randB, A: ", hhmacA2out)
+    print("Strona A: wyslano wartosc funkcji HMAC dla argumentow randB, A")
+    
+    return hhmacAout,hhmacA2out
+    
+hhmacAout,hhmacA2out = hmacA(randA, randB, idB,hhmacBout)
+
+#B otrzymal wartosc funkcji hmac dla argumentow randB, A, musi teraz obliczyc to ponownie i porownac
+def hmacB2(randB,idA,hhmacA2out):
+    print("Strona B: otrzymano wartosc funkcji HMAC dla argumentow randB, A, obliczanie i porownanie wartosci")
+    argumentB2 = str(randB) + idA
+    hhmacB2 = hmac.new(binascii.unhexlify(wspolnyKluczHash),argumentB2.encode(),hashlib.sha3_512)
+    hhmacB2out = hhmacB2.hexdigest()
+    print("Strona B: obliczono wartosc funkcji HMAC dla otrzymanych argumentow: ",hhmacB2out)
+    print("Czy wartosci sie zgadzaja: ",hhmacA2out==hhmacB2out)
+
+hmacB2(randB,idA,hhmacA2out)
