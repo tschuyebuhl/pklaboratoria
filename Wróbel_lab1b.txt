@@ -1,0 +1,101 @@
+#Ksawery Wróbel WCY19KY1S1
+#szukamy grupy cyklicznej z b-bitową liczbą pierwszą w postaci p = 2n+1 
+#działamy w podgrupie generowanej przez element g z F rzędu q
+#referencje: Bruce Schneier, Applied Cryptography Protocols, Algorithms, And Source Code in C
+#Część implementacji identyczna jak w 1a, została skopiowana
+
+
+
+#3.1 Procedura generacji parametrów dziedziny
+#Wejście:
+# b - długość charakterystyki ciałą p w bitach
+#Wyjście:
+# p, n, g - elementy parametrów dziedziny
+def generacja (b):
+    p = previous_prime(2^b)
+    while not is_prime((p-1)//2):
+        p = previous_prime(p)
+    n = (p-1) // 2
+    #schemat z laboratoriów 
+    print ("p = ",p)
+    print ("n = ",n)
+    #generator g podgrupy G rzędu n 
+    h = mod(primitive_root(p), p) #generator grupy F modulo p 
+    g = h^2 #generator G w podgrupie F
+    g = g^(randint(2021,201921)) #lepiej jak generator jest duży
+    print ("g = ",g)
+    return p, n, g
+
+#3.2 Procedury generacji pary kluczy prywatny/publiczny
+#Wejście: 
+#p, n, g - elementy parametrów dziedziny
+#Wyjście:
+#Xa, Xb, Xc - liczba losowa, klucz prywatny
+#Ka, Kb, Kc - klucze publiczne spełniająca:
+# kpub = g^(kpriv) mod p
+# 1. Strony A, B i C generują losową liczbę całkowitą X nalężącą do Zn i obliczają klucz publiczny
+def generacjaA(p, n, g):
+    Xa = randint(1,n-1)
+    print("Losujemy liczbę z przedziału (1,n-1) równą Xa = ", Xa)
+    Ka = mod((g^Xa),p)
+    print("Obliczono klucz publiczny Ka równy = ", Ka)
+    return Xa, Ka
+def generacjaB(p, n, g):
+    Xb = randint(1,n-1)
+    Kb = mod((g^Xb),p) 
+    print("Losujemy liczbę z przedziału (1,n-1) równą Xb = ",Xb)
+    print("Obliczono klucz publiczny Kb równy =  ",Kb)
+    return Xb, Kb
+def generacjaC(p, n, g):
+    Xc = randint(1,n-1)
+    Kc = mod((g^Xc),p)
+    print("Losujemy liczbę z przedziału (1,n-1) równą Xc = ",Xc)
+    print("Obliczono klucz publiczny Kc równy =  ",Kc)
+    return Xc, Kc
+p, n, g = generacja(128)
+Xa, Ka = generacjaA(p, n, g)
+Xb, Kb = generacjaB(p, n, g)
+Xc, Kc = generacjaC(p, n, g)
+# 3.3 Realizacja kolejnych kroków protokołu 
+# 
+# 
+# 
+# 1. Strony A, B i C przesyłają olibczone klucze wg schematu: A wysyła Ka do B, B wysyła Kb do C i C wysyła Kc do A
+print("  ")
+print("Nastepuje pierwsza wymiana kluczy: A -> B, B -> C, C -> A")
+print("  ")
+# A ma Kc, Xa, g, p
+# B ma Ka, Xb, g, p
+# C Ma Ka, Xc, g, p
+
+
+
+# 2. Strony A, B i C liczą nowe klucze częściowe. A oblicza Kca i wysyła do B, B oblicza Kab i wysyła do C, C oblicza Kbc i wysyła do A.
+
+Kca = mod((Kc^Xa),p)
+print("Strona A: wyznaczono Kca = ", Kca)
+Kab = mod((Ka^Xb),p)
+print("Strona B: wyznaczono Kab = ", Kab)
+Kbc = mod((Kb^Xc),p)
+print("Strona C: wyznaczono Kbc = ", Kbc)
+
+#Przesyłamy klucze w prawo, teraz mozemy wyznaczyc wlasciwe klucze:
+# A ma Kbc, xa, g, p
+# B ma Kca, xb, g, p
+# C ma Kab, xc, g, p
+print("  ")
+print("Nastepuje druga wymiana kluczy: A -> B, B -> C, C -> A")
+print("  ")
+# 3. Strony A, B i C liczą klucze właściwe podnosząc otrzymane uprzednio klucze do potęgi swojego klucza prywatnego.
+Kbca = mod((Kbc^Xa),p)
+Kcab = mod((Kca^Xb),p)
+Kabc = mod((Kab^Xc),p)
+
+#  4. Ostatni krok to porównanie obliczonych kluczy, jeśli się zgadzają to wszystko zostało wykonane poprawnie.
+test = ((Kbca == Kcab) & (Kcab == Kabc))
+print("Klucze koncowe:")
+print("Klucz Kbca = ",Kbca)
+print("Klucz kcab = ",Kcab)
+print("Klucz Kabc = ",Kabc)
+print("True jeśli klucze się zgadzają ")
+print(" ",test)

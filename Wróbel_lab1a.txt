@@ -1,0 +1,64 @@
+#Ksawery Wróbel WCY19KY1S1
+#szukamy grupy cyklicznej z b-bitową liczbą pierwszą w postaci p = 2n+1 
+#działamy w podgrupie generowanej przez element g z F rzędu q
+#referencje: Bruce Schneier, Applied Cryptography Protocols, Algorithms, And Source Code in C
+from __future__ import print_function
+#3.1 Procedura generacji parametrów dziedziny
+#Wejście:
+# b - długość charakterystyki ciałą p w bitach
+#Wyjście:
+# p, n, g - elementy parametrów dziedziny
+def generacja (b):
+    p = previous_prime(2^b)
+    while not is_prime((p-1)//2):
+        p = previous_prime(p)
+    n = (p-1) // 2
+    print ("p = ",p)
+    print ("n = ",n)
+    #generator g podgrupy G rzędu n 
+    h = mod(primitive_root(p), p) #generator grupy F modulo p 
+    g = h^2 #generator G w podgrupie F
+    g = g^((randint(750,682131))) #lepiej jak generator jest duży
+    print ("g = ",g)
+    return p, n, g
+#3.2 Procedury generacji pary kluczy prywatny/publiczny
+#Wejście: 
+#p, n, g - elementy parametrów dziedziny
+#Wyjście:
+#Xa, Xb - liczba losowa, klucze prywatne
+#Ka, Kb - klucze publiczne spełniające:
+# kpub = g^(kpriv) mod p
+def generacjaA(p, n, g):
+    Xa = randint(1,n-1)
+    print("Losujemy liczbę z przedziału (1,n-1) równą Xa = ", Xa)
+    Ka = mod((g^Xa),p)
+    print("Obliczono klucz publiczny Ka równy = ", Ka)
+    return Xa, Ka
+def generacjaB(p, n, g):
+    Xb = randint(1,n-1)
+    Kb = mod((g^Xb),p) 
+    print("Losujemy liczbę z przedziału (1,n-1) równą Xb = ",Xb)
+    print("Obliczono klucz publiczny Kb równy =  ",Kb)
+    return Xb, Kb
+p, n, g = generacja(128)
+Xa, Ka = generacjaA(p, n, g)
+Xb, Kb = generacjaB(p, n, g)
+
+# 3.3 Kolejne kroki protokołu
+# Strona A wysyła swój klucz publiczny do strony B, strona B wysyła swój klucz publiczny do strony A
+# Obie strony podnoszą otrzymane klucze do potęgi swojego klucza prywatnego i muszą otrzymać to samo
+
+#wysyłają sobie klucze i podnoszą do potęgi, czyli
+#użytkownik  A podnosi klucz Kb który otrzymał do potęgi Xa
+#użytkownik B podnosi klucz Ka który otrzymał do potęgi Xb
+#mają zatem to samo, to się musi równać
+print("Nastepuje Wymiana kluczy")
+
+
+print("Kb^Xa = ",Kb^Xa)
+print("Ka^Xb = ",Ka^Xb)
+Kba = Kb^Xa
+Kab = Ka^Xb
+test = (Kba == Kab)
+print("True jeśli klucze się zgadzają ")
+print("",test)

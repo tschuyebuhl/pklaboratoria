@@ -1,0 +1,55 @@
+#Ksawery Wróbel WCY19KY1S1
+#Lab 4 - podpisy niezaprzeczalne
+
+
+p = 2^19 - 1
+
+F = GF(p)
+g = F.primitive_element()
+
+def nwd(p,q):
+    while q != 0:
+        p, q = q, mod(p,q)
+    return p
+def wspolpierwsze(P = (p-1)):
+    x = F.random_element()
+    while(nwd(x,P) != True):
+        x = F.random_element()
+    return x
+x = wspolpierwsze() # x to klucz prywatny
+X = pow(g,x,p)
+m = 2345
+print("Wiadomość m = ",m)
+print("Strona A: wyznaczenie podpisu z pod wiadomością m")
+z = pow(m,x,p)
+print("Strona A: z = ",z)
+a = randint(1,p-1)
+b = randint(1,p-1)
+print("Strona B: wybrano dwie losowe liczby a i b: ")
+print("a = ",a)
+print("b = ",b)
+c = mod(pow(m,a) * pow(g,b),p)
+print("Strona B: obliczono c jako m^a*g^b i wysłano do A")
+
+q = randint(1,p-1)
+
+s1 = mod(c * pow(g,q),p) 
+s2 = pow(c*(g^q),x,p)
+
+print("Strona A: wybrano liczbę losową q i obliczono s1 = c*g^1 oraz s2 = (c*g^q)^x ")
+print("q =",q)
+print("s1 = ",s1)
+print("s2 = ",s2)
+print("Wysłano wyniki działań do B")
+
+S1 = mod(c * pow(g,q),p)
+S2 = mod(pow(X,(b+q)) * (z^a),p) 
+print("Strona B: wysłano stronie A wartości a i b")
+print("Strona A: wysłano stronie B wartość q")
+print("Strona B: obliczono S1 = c*g^q oraz s2 = X^(b+q)*z^a ")
+print("S1 = ",S1)
+print("S2 = ",S2)
+print("Następuje weryfikacja podpisu")
+
+test = "Podpis zweryfikowany poprawnie" if (S1 == s1 and S2 == s2) else "Podpis nie został zweryfikowany"
+print(test)

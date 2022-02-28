@@ -1,0 +1,116 @@
+#Ksawery Wróbel WCY19KY1S1
+#Zadanie 3b - Karnin-Greene-Hellman
+#Dziękuję za dodatkowy czas.
+
+
+# Zaufana strona wybiera element pierwotny α , losowe elementy od a1 do ak-1 i ciało Fq^m 
+# k - minimalna ilosc do odtworzenia sekretu M 
+# m - stopień wielomianów
+
+def generacja1(iloscdoOdtworzenia,stopienWielomianu):
+    pierwsza = next_prime(randint(2^32,2^64))
+    cialoF.<a> = GF(pierwsza^stopienWielomianu)
+    tabLosowa = []
+    for i in range(iloscdoOdtworzenia):
+        tabLosowa.append(cialoF.random_element())
+    alpha = cialoF.primitive_element()
+    sekret = cialoF.random_element()
+    return pierwsza,cialoF,tabLosowa,alpha,sekret
+
+def generacja2(tabLosowa,alpha,cialoF,iloscdoOdtworzenia,cienie,sekret):
+    macierzS = zero_matrix(cialoF,cienie,iloscdoOdtworzenia)
+    for i in range (cienie-1):
+        temp = alpha^(i+1)
+        for j in range(iloscdoOdtworzenia):
+            macierzS[i,j] = temp^j
+    for i in range(iloscdoOdtworzenia-1):
+        macierzS[cienie-1,i] = 0
+    macierzS[cienie-1,iloscdoOdtworzenia-1] = 1
+    wektorK = zero_vector(cialoF,iloscdoOdtworzenia)
+    wektorK[0] = sekret
+    for i in range(1,iloscdoOdtworzenia):
+        wektorK[i] = tabLosowa[i-1]
+    wektorC = macierzS*wektorK
+    
+    return wektorC,wektorK,macierzS
+
+def niepowtarzalnoscId(listaStron, n):
+    rozmiar = len(listaStron)
+    for i in range(rozmiar):
+        if listaStron[i] == n:
+            return True
+        else:
+            return False
+def odtwarzanieTajemnicy(iloscdoOdtworzenia,cienie):
+    listaStron = []
+    for i in range(iloscdoOdtworzenia):
+        test = 1
+        id = randint(1,cienie)
+        while test == True:
+            id = randint(1,cienie)
+            test = niepowtarzalnoscId(listaStron,id)
+        listaStron.append(id)
+    listaStron.sort()
+    
+    
+    return listaStron
+
+def odtwarzanieTajemnicy2(iloscdoOdtworzenia,cienie,alpha,listaStron,cialoF):
+    maxId = listaStron[iloscdoOdtworzenia-1]
+    dlugosc = len(listaStron)
+    if maxId == cienie:
+        macierzD = zero_matrix(cialoF,dlugosc,iloscdoOdtworzenia)
+        for i in range(0,(dlugosc-1)):
+            temp = alpha^listaStron[i]
+            for j in range(iloscdoOdtworzenia):
+                 macierzD[i,j] = temp^j
+        for i in range(0,(iloscdoOdtworzenia-1)):
+            macierzD[dlugosc-1,i] = 0
+        macierzD[dlugosc-1,cienie-1]=1
+    else:
+        macierzD = zero_matrix(cialoF,iloscdoOdtworzenia,iloscdoOdtworzenia)
+        for i in range(iloscdoOdtworzenia):
+            temp = alpha^listaStron[i]
+            for j in range(iloscdoOdtworzenia):
+                macierzD[i,j] = temp^j
+    return macierzD
+
+
+def odtwarzanieTajemnicy3(iloscdoOdtworzenia,wektorC,listaStron,cialoF):
+    wektorOdtwarzanie = zero_vector(cialoF,iloscdoOdtworzenia)
+    for i in range(iloscdoOdtworzenia):
+        wektorOdtwarzanie[i] = wektorC[listaStron[i]-1]
+    return wektorOdtwarzanie
+
+def odtwarzanieTajemnicy4(macierzD,cialoF,wektorOdtwarzanie):
+    wektorX = macierzD.inverse()*wektorOdtwarzanie
+    sekret = wektorX[0]
+    return sekret,wektorX
+
+cienie = 7
+iloscdoOdtworzenia = 3
+stopienWielomianu = 4
+
+print("Dane wejściowe, odpowiednio: stopień wielomianó, całkowita liczba cieni i minimalna liczba cieni: ",stopienWielomianu,cienie,iloscdoOdtworzenia)
+pierwsza,cialoF,tabLosowa,alpha,sekret = generacja1(iloscdoOdtworzenia,stopienWielomianu)
+print("System generuje cienie, ciało F oraz element α, wysyła te elementy do stron")
+
+wektorC, wektorK, macierzS = generacja2(tabLosowa,alpha,cialoF,iloscdoOdtworzenia,cienie,sekret)
+print("System generuje k losowych elementów oraz sekret")
+for i in range(1,cienie+1):#B,C,S to macierzS,wektorK,wektorC
+    print("Strona",i,"otrzymała od systemu cień oraz swój identyfikator: ",wektorC[i-1],i)
+listaStron = odtwarzanieTajemnicy(iloscdoOdtworzenia,cienie)
+print("Strony przechodzą do odtwarzania tajemnicy")
+macierzD = odtwarzanieTajemnicy2(iloscdoOdtworzenia,cienie,alpha,listaStron,cialoF)
+print("Strony wyznaczyły macierz D:  ",macierzD)
+wektorOdtwarzanie = odtwarzanieTajemnicy3(iloscdoOdtworzenia,wektorC,listaStron,cialoF)
+print("Strony wyznaczają wektor do odtworzenia tajemnicy",wektorOdtwarzanie)
+sekret2,wektorX = odtwarzanieTajemnicy4(macierzD,cialoF,wektorOdtwarzanie)
+print("Strony wyznaczyły wektor składający się z tajemnicy i elementów losowych")
+stan = sekret == sekret2
+print("Odtworzony sekret to zerowy element wektoraX")
+print("Status odtworzenia tajemnicy: ")
+if stan is True:
+    print("Udało się odtworzyć tajemnicę")
+else:
+    print("Nie udało się odtworzyć tajemnicy.")
